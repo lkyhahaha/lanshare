@@ -29,7 +29,7 @@
 要求：Node.js ≥ 14
 
 ```bash
-git clone https://github.com/<你的用户名>/lanshare.git
+git clone https://github.com/lkyhahaha/lanshare.git
 cd lanshare
 npm install
 node server.js
