@@ -16,8 +16,9 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const VERSION = '0.1.0';
 
 // ---------- 命令行参数 ----------
+// 数据目录默认相对当前工作目录（兼容 pkg 单文件二进制：跟随运行位置）
 function parseArgs(argv) {
-  const out = { port: 8787, pin: '', dir: path.join(__dirname, 'data') };
+  const out = { port: 8787, pin: '', dir: path.join(process.cwd(), 'data') };
   for (const a of argv.slice(2)) {
     const m = /^--(port|pin|dir)=(.*)$/.exec(a);
     if (m) out[m[1]] = m[2];

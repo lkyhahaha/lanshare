@@ -1,32 +1,38 @@
 # LAN Share 📡
 
-局域网文件/消息传输工具。一台机器启动服务，局域网内所有设备（电脑、手机、平板）用浏览器打开即可互相收发**文本、截图、文件**。
+English | [简体中文](README.zh-CN.md)
 
-**免安装（接收方）、免登录、数据不出内网。**
+**LAN file & message sharing for teams.** Start the server on one machine, and every device on the LAN — Windows, macOS, Linux, phones — shares text, screenshots and files right from the browser.
 
-## 界面预览
+**Zero install for receivers. No accounts. Data never leaves your network.**
 
-| 主界面 | 邀请伙伴加入 |
+![demo](docs/demo.gif)
+
+| Main UI | Invite |
 |---|---|
-| ![主界面](docs/screenshot-main.png) | ![邀请伙伴](docs/screenshot-invite.png) |
+| ![main](docs/screenshot-main.png) | ![invite](docs/screenshot-invite.png) |
 
-| 移动端聊天 | 移动端会话抽屉 |
+| Mobile chat | Mobile drawer |
 |---|---|
-| ![移动端](docs/screenshot-mobile.png) | ![会话抽屉](docs/screenshot-mobile-drawer.png) |
+| ![mobile](docs/screenshot-mobile.png) | ![drawer](docs/screenshot-mobile-drawer.png) |
 
-## 特性
+> UI is currently Chinese-only. An i18n layer is planned — PRs welcome!
 
-- 🔍 **零门槛加入**：服务启动后终端打印地址 + 二维码，其他设备扫码即用；自动识别设备名（服务机本机取主机名，其他机器尽力反查内网主机名）
-- 💬 **会话制消息**：广播频道「所有人」+ 设备间私聊，消息互不混淆；未读角标、引用回复、2 分钟内撤回、长文本折叠、会话草稿
-- 📎 **文件/截图互传**：粘贴截图、拖拽多文件、实时进度条；图片页内灯箱预览；流式传输不限文件大小
-- 📥 **自动下载**：可选开启，定向推给某台设备的文件自动保存到指定文件夹——适合 CI 推包到无人值守测试机
-- 🤖 **脚本/CI 友好**：完整 HTTP API，一行 `curl` 推文件到指定设备
-- 📱 **移动端适配**：手机扫码加入自动切换移动布局
-- 🔒 可选 PIN 码；所有数据仅在内网流转
+## Why LAN Share
 
-## 快速开始
+Most LAN transfer tools (LocalSend, Snapdrop…) require installing an app on every device. LAN Share flips that: **the receiver only needs a browser** — perfect for test benches, CI rigs and mixed-OS teams.
 
-要求：Node.js ≥ 14
+- 🖥️ **Receiver = browser**: scan a QR code, start sharing. Nothing to install
+- 🤖 **Built for unattended test machines & CI**: push build artifacts over HTTP, devices auto-download them to a folder
+- 💬 **Conversation-style messaging**: broadcast channel + per-device private chats, unread badges, quote replies, 2-minute recall, drafts
+- 📎 **Files & screenshots**: paste screenshots, drag & drop, streaming transfer (no size limit), in-page image lightbox
+- 🧩 **Script-friendly HTTP API**: one-line `curl` to push files
+- 📱 **Mobile-ready UI** and invite QR codes
+- 🔒 Optional PIN; everything stays on your LAN
+
+## Quick Start
+
+Requires Node.js ≥ 14
 
 ```bash
 git clone https://github.com/lkyhahaha/lanshare.git
@@ -35,105 +41,109 @@ npm install
 node server.js
 ```
 
-启动后终端会打印局域网地址和二维码，其他设备：
+The terminal prints LAN URLs and a QR code. Other devices:
 
-- 浏览器打开 `http://<服务机IP>:8787`，或手机扫码
-- 首次打开按引导给设备起个名字（与其他设备重名不允许），即可开始收发
+- Open `http://<server-ip>:8787` in a browser, or scan the QR
+- Pick a device name in the welcome dialog (duplicates are rejected) and start sharing
 
-> 给测试机固定名字：`http://<IP>:8787/?name=测试机A`（首次访问后记住）
+> Pre-configure a test machine: `http://<ip>:8787/?name=TestMachineA`
 
-### 参数
+### Download prebuilt binaries (no Node.js needed)
+
+[Releases](https://github.com/lkyhahaha/lanshare/releases) ships single-file builds for Windows / macOS / Linux:
+
+```bash
+./lanshare --port=8787
+```
+
+### Docker
+
+```bash
+docker build -t lanshare .
+docker run -d --name lanshare -p 8787:8787 -v lanshare-data:/app/data lanshare
+```
+
+### Options
 
 ```bash
 node server.js [--port=8787] [--pin=1234] [--dir=./data]
 ```
 
-| 参数 | 说明 | 默认 |
+| Option | Description | Default |
 |---|---|---|
-| `--port` | 监听端口 | 8787 |
-| `--pin` | 访问 PIN 码（网页和 API 都需要验证） | 无 |
-| `--dir` | 数据目录（文件、设备注册表、身份记忆） | ./data |
+| `--port` | Listen port | 8787 |
+| `--pin` | Require a PIN for web & API access | off |
+| `--dir` | Data directory (files, device registry) | ./data |
 
-## 使用
+## Usage
 
-| 操作 | 方式 |
+| Action | How |
 |---|---|
-| 切换会话 | 左侧对话列表：「所有人」= 广播频道；点某台设备进入私聊 |
-| 会话隔离 | 广播消息只出现在「所有人」；私聊只显示你们俩的消息 |
-| 未读提醒 | 会话红点数字 + 浏览器标签页标题 `(3)`；对方离线时会话置灰并可一键移除 |
-| 发文本 | 回车发送（Shift+回车换行），中文输入法选字的回车不会误发 |
-| 发截图 | 页面内 Ctrl/⌘ + V 粘贴 |
-| 发文件 | 点 📎 或拖拽到页面；需要选隐藏目录：macOS 弹窗内 ⌘⇧. 显示隐藏、⌘⇧G 输入路径 |
-| 引用回复 | 悬停消息点「引用」 |
-| 撤回 | 自己发的消息 2 分钟内悬停点「撤回」 |
-| 自动下载 | 开启后定向发给我的文件自动保存（Chrome/Edge 可指定文件夹） |
-| 邀请伙伴 | 左上角「📩 邀请」：二维码 + 可复制的邀请文案（含 Wi-Fi 提示与注意事项） |
-
-### 有人机器 + 无人值守测试机混合
-
-- **有人机器**：正常打开页面收发
-- **无人值守测试机**：打开带名字的地址并保持标签页开着，开启「自动下载」后定向推给它的文件自动落盘
-- **CI / 脚本**：无需网页，直接走 HTTP API
+| Switch conversation | Sidebar: "所有人" (Everyone) = broadcast channel; click a device for private chat |
+| Unread | Red badge per conversation + `(n)` in the browser tab title |
+| Send text | Enter to send (Shift+Enter for newline); IME-safe |
+| Send screenshot | Ctrl/⌘ + V inside the page |
+| Send files | 📎 button or drag & drop; streaming with progress bars |
+| Quote reply | Hover a message → 引用 |
+| Recall | Own messages, within 2 minutes |
+| Auto-download | Toggle in the sidebar; files targeted at this device are saved automatically (Chrome/Edge can pick a folder) |
+| Invite | "📩 邀请" button: QR + copyable invite text with Wi-Fi hints |
+| Admin (server machine only) | "清空服务器文件" clears uploads; ✕ removes offline devices from the list |
 
 ## HTTP API
 
 ```bash
-# 推文件（流式，大文件 OK）——广播
+# Push a file (streaming, any size) — broadcast to everyone
 curl -T app.apk "http://192.168.1.5:8787/api/files?to=all&fromName=CI"
 
-# 中文文件名用 x-filename 请求头（URL 里直接写中文会被 HTTP 层拒绝）
+# Non-ASCII filenames: use the x-filename header
 curl -T 构建包.apk -H "x-filename: 构建包.apk" "http://192.168.1.5:8787/api/files?to=all"
 
-# 定向推给某台设备（deviceId 从 /api/devices 查）
+# Target one device (deviceId from /api/devices)
 curl -T app.apk "http://192.168.1.5:8787/api/files?to=<deviceId>&fromName=CI"
 
-# 查在线设备与文件占用
+# List online devices & storage usage
 curl http://192.168.1.5:8787/api/devices
 
-# 发文本
+# Send a text message
 curl -X POST "http://192.168.1.5:8787/api/send-text" \
      -H 'Content-Type: application/json' \
-     -d '{"text":"构建完成","to":"all","fromName":"CI"}'
+     -d '{"text":"build done","to":"all","fromName":"CI"}'
 
-# 下载文件
+# Download a file
 curl -OJ "http://192.168.1.5:8787/files/<fileId>"
 
-# 清空服务器文件（管理操作，仅服务器本机可调用）
+# Clear server files (admin, server machine only)
 curl -X DELETE http://localhost:8787/api/files
 ```
 
-启用 PIN 时，所有 API 加请求头 `x-pin: <PIN>` 或 `?pin=<PIN>`。
+With `--pin`, add header `x-pin: <PIN>` or `?pin=<PIN>` to every API call.
 
-## 常见问题
+## FAQ
 
-**页面打不开？**
-1. 确认设备与服务机连接**同一个 Wi-Fi / 网段**（公司多个 Wi-Fi 之间可能隔离，切换后重试）
-2. 检查服务机防火墙是否放行了端口（默认 8787）
-3. 服务机 IP 变了（换了网络）——以服务启动时终端打印的最新地址为准
+**Page won't open?**
+1. Make sure the device is on the **same Wi-Fi / subnet** as the server (corporate SSIDs are often isolated)
+2. Check the server firewall allows the port (default 8787)
+3. Server IP changed (different network) — use the address printed at startup
 
-**设备名重复 / 想改名？**
-点击左上角自己的设备卡片，悬停出现 ✏️ 图标进入改名；与其他设备重名会被拦截。
+**Files stored where? Lost on restart?**
+Server `--dir` (default `./data`). Files survive restarts; admins can clear them from the page.
 
-**文件存在哪里？会丢失吗？**
-服务端 `--dir` 数据目录下（默认 `./data`），服务重启后仍可下载；页面提供「清空服务器文件」（仅服务机本机可见）。
+## Security
 
-## 安全说明
+Designed for **trusted LANs**: plain HTTP/WS, no accounts. Do not expose it to the internet. Use `--pin` if your LAN isn't fully trusted. Admin actions (clear files, remove devices) are restricted to the server machine.
 
-- 本工具面向**可信内网**设计：明文 HTTP/WS 传输、无账号体系，请勿直接暴露到公网
-- 如内网不完全可信，启动时加 `--pin` 开启访问验证
-- 「清空服务器文件」「移除设备」等管理操作仅服务器本机可执行
-
-## 目录结构
+## Project Layout
 
 ```
-├── server.js          # 入口：HTTP + WebSocket、静态页面、REST API
+├── server.js          # entry: HTTP + WebSocket, static UI, REST API
 ├── lib/
-│   ├── hub.js         # 连接与消息中枢：设备注册表、路由、撤回、历史
-│   ├── files.js       # 文件流式存储
-│   ├── qrsvg.js       # 二维码 SVG 生成
-│   └── util.js        # 工具函数
-├── public/            # 前端单页（原生 HTML/JS/CSS，无构建步骤）
-└── data/              # 运行时数据（自动创建，已 gitignore）
+│   ├── hub.js         # connection & message hub: registry, routing, recall, history
+│   ├── files.js       # streaming file store
+│   ├── qrsvg.js       # QR code (SVG) generator
+│   └── util.js        # helpers
+├── public/            # frontend single page (vanilla HTML/JS/CSS, no build step)
+└── data/              # runtime data (auto-created, gitignored)
 ```
 
 ## License

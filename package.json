@@ -22,6 +22,17 @@
     "node": ">=14"
   },
   "license": "MIT",
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "targets": [
+      "node20-linux-x64",
+      "node20-macos-x64",
+      "node20-macos-arm64",
+      "node20-win-x64"
+    ]
+  },
   "dependencies": {
     "qrcode-terminal": "^0.12.0",
     "ws": "^8.18.0"

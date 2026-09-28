@@ -1,0 +1,63 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build binaries (Linux / macOS / Windows)
+        run: npx -y @yao-pkg/pkg . --out-path dist
+
+      - name: Package artifacts
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p release
+          # Linux / macOS 用 tar.gz
+          for f in dist/lanshare-linux-arm64 dist/lanshare-linux-x64 dist/lanshare-macos-arm64 dist/lanshare-macos-x64; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f")
+            dir="LANShare-${GITHUB_REF_NAME}-${base#lanshare-}"
+            mkdir -p "$dir"
+            cp "$f" "$dir/lanshare"
+            cp README.md LICENSE "$dir/"
+            tar -czf "release/LANShare-${GITHUB_REF_NAME}-${base#lanshare-}.tar.gz" "$dir"
+          done
+          # Windows 用 zip
+          if [ -f dist/lanshare-win-x64.exe ]; then
+            dir="LANShare-${GITHUB_REF_NAME}-win-x64"
+            mkdir -p "$dir"
+            cp dist/lanshare-win-x64.exe "$dir/lanshare.exe"
+            cp README.md LICENSE "$dir/"
+            zip -qr "release/LANShare-${GITHUB_REF_NAME}-win-x64.zip" "$dir"
+          fi
+          ls -la release/
+
+      - name: Upload artifacts (workflow_dispatch 预览用)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: release/
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
