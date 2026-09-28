@@ -1,0 +1,10 @@
+# 运行时数据（设备注册表、身份记忆、上传的文件）——不要提交
+data/
+
+# 依赖
+node_modules/
+
+# 日志与系统文件
+*.log
+.DS_Store
+Thumbs.db

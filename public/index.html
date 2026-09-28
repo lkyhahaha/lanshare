@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAN Share · 局域网传输</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>" />
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+  <!-- 侧栏移动端抽屉遮罩 -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="app">
+    <!-- 侧栏：自己 + 发送目标 + 设置 -->
+    <aside class="sidebar">
+      <div class="brand-row">
+        <div class="brand">📡 LAN Share</div>
+        <button class="invite-entry" id="inviteBtn" title="生成二维码/邀请文案，让其他设备加入">📩 邀请</button>
+      </div>
+
+      <div class="me" id="meBox">
+        <div class="avatar" id="myAvatar">?</div>
+        <div class="me-info" id="meInfo">
+          <div class="me-name" id="myName">…</div>
+          <div class="me-status" id="meStatus"><i class="dot on"></i>我的设备 · 在线</div>
+        </div>
+        <button class="me-edit-btn" id="meEditBtn" title="修改名称">✏️</button>
+        <div class="me-edit" id="meEdit">
+          <input type="text" id="meEditInput" maxlength="30" autocomplete="off" />
+          <div class="me-edit-btns">
+            <button class="me-edit-save" id="meEditSave">保存</button>
+            <button class="me-edit-cancel" id="meEditCancel">取消</button>
+          </div>
+          <div class="me-edit-error" id="meEditError"></div>
+        </div>
+      </div>
+
+      <div class="section-title">对话</div>
+      <div class="device-list" id="deviceList">
+        <div class="device-row" data-id="all" id="rowAll">
+          <div class="avatar all">📣</div>
+          <div class="device-name">所有人</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <label class="option">
+          <input type="checkbox" id="autoDl" />
+          <span>自动下载定向发给我的文件</span>
+        </label>
+        <div class="setting-row" id="saveLocation" title="点击选择自动下载的保存文件夹">
+          <span class="setting-icon">📂</span>
+          <span class="setting-label">保存位置</span>
+          <span class="setting-value" id="saveLocationValue">浏览器默认</span>
+        </div>
+        <button class="btn-danger hidden" id="clearFiles" title="仅服务器本机可见">清空服务器文件</button>
+        <div class="storage" id="storageInfo"></div>
+      </div>
+    </aside>
+
+    <!-- 主区域：消息流 + 输入 -->
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" title="会话列表">☰</button>
+        <span class="target-label">发给：<b id="targetLabel">所有人</b></span>
+        <span class="conn" id="connState"><i class="dot off"></i>连接中…</span>
+      </header>
+
+      <div class="messages" id="messages">
+        <div class="empty-hint" id="emptyHint">
+          暂无消息<br />
+          <small>回车发送文本 · Ctrl/⌘+V 粘贴截图 · 拖拽文件到页面发送</small>
+        </div>
+      </div>
+
+      <button class="new-msg-btn hidden" id="newMsgBtn">↓ 新消息</button>
+
+      <div class="composer">
+        <div class="quote-bar composer-quote hidden" id="quoteBar">
+          <div class="quote-text" id="quoteText"></div>
+          <button id="quoteCancel" title="取消引用">✕</button>
+        </div>
+        <div class="offline-notice hidden" id="offlineNotice"></div>
+        <div class="attach-hint hidden" id="attachHint">
+          <span id="attachHintText"></span>
+          <button id="attachHintClose" title="关闭提示">✕</button>
+        </div>
+        <div class="pending" id="pending"></div>
+        <div class="input-row">
+          <button class="btn-icon" id="attachBtn" title="选择文件（macOS 弹窗内按 ⌘⇧. 显示隐藏文件，⌘⇧G 直接输入路径）">📎</button>
+          <input type="file" id="fileInput" multiple hidden />
+          <textarea id="input" rows="1" placeholder="输入消息，回车发送（Shift+回车换行）；可直接粘贴截图"></textarea>
+          <button class="btn-primary" id="sendBtn">发送</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 拖拽浮层 -->
+  <div class="drop-overlay" id="dropOverlay">
+    <div class="drop-box">松开即发送给 <b id="dropTargetName">所有人</b></div>
+  </div>
+
+  <!-- PIN 弹窗 -->
+  <div class="modal-mask hidden" id="pinModal">
+    <div class="modal">
+      <div class="modal-title">🔒 需要访问 PIN 码</div>
+      <p class="modal-tip">请输入服务启动时设置的 PIN（服务端终端可见）</p>
+      <input type="text" id="pinInput" placeholder="PIN" autocomplete="off" />
+      <button class="btn-primary" id="pinSubmit">进入</button>
+      <div class="pin-error" id="pinError"></div>
+    </div>
+  </div>
+
+  <!-- 首次使用引导弹窗：简介 + 命名 -->
+  <div class="modal-mask hidden" id="nameModal">
+    <div class="modal onboarding-modal">
+      <div class="modal-title">📡 欢迎使用 LAN Share</div>
+      <div class="onboard-intro">
+        <div>📶 局域网内设备互发文本、截图、文件</div>
+        <div>🚫 免安装、免登录，数据不出内网</div>
+        <div>💻 电脑、手机浏览器打开即可用</div>
+      </div>
+      <div class="onboard-name-label">先给这台设备起个名字，其他设备会看到它</div>
+      <input type="text" id="nameInput" maxlength="30" placeholder="如：测试机A" autocomplete="off" />
+      <div class="name-error" id="nameError"></div>
+      <button class="btn-primary" id="nameSubmit" disabled>开始使用</button>
+    </div>
+  </div>
+
+  <!-- 邀请伙伴弹窗（双栏：左二维码/链接，右文案/注意事项；窄屏自动单栏） -->
+  <div class="modal-mask hidden" id="inviteModal">
+    <div class="modal invite-modal">
+      <button class="invite-close" id="inviteClose" title="关闭">✕</button>
+      <div class="modal-title">📩 邀请伙伴加入</div>
+      <div class="invite-grid">
+        <div class="invite-left">
+          <div class="invite-qr"><img id="inviteQrImg" alt="加入二维码" /></div>
+          <div class="invite-qr-hint">手机扫码直接加入</div>
+          <div class="invite-url-row">
+            <input type="text" id="inviteUrl" readonly />
+            <button class="btn-primary" id="inviteCopyUrl">复制</button>
+          </div>
+        </div>
+        <div class="invite-right">
+          <div class="invite-section-title">邀请文案（发给同事）</div>
+          <textarea id="inviteText" readonly rows="8"></textarea>
+          <button class="btn-primary wide" id="inviteCopyText">复制邀请文案</button>
+          <div class="invite-notes" id="inviteNotes"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 轻提示 -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>

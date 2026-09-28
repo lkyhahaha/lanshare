@@ -1,0 +1,29 @@
+{
+  "name": "lanshare",
+  "version": "0.1.0",
+  "description": "局域网文件/消息传输工具：一台机器启动服务，其他设备浏览器打开即用，免安装免登录",
+  "main": "server.js",
+  "bin": {
+    "lanshare": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "lan",
+    "file-transfer",
+    "local-network",
+    "airdrop",
+    "self-hosted",
+    "websocket",
+    "chat"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.18.0"
+  }
+}
